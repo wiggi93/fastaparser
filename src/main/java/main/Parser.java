@@ -7,8 +7,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.gson.Gson;
 
@@ -17,18 +20,21 @@ import models.FastaObject;
 
 public class Parser {
 
+	
+	
 	public static void main(String[] args) {
 	
 		CassandraConnection connection = new CassandraConnection();
 		connection.connect();
-		connection.createTable();
+		connection.createProteinTable();
+		connection.createProtein_RedundancyTable();
       
 		UUID fastaID = UUIDs.timeBased();
 		connection.createNewColumn(fastaID);
 		
 		Gson gson = new Gson();
 		
-		HashMap<String, HashSet<String>> sequences= new HashMap<String, HashSet<String>>();
+		HashMap<UUID, long[]> map = new HashMap<UUID, long[]>();
 		
 		File test = new File("/Users/philip/Desktop/arbeit/WorkspaceSpeL/NCBI_Homo_Sapiens_refSeq.fasta");
       
@@ -43,6 +49,7 @@ public class Parser {
 		String temp= "";
 		FastaObject object=null;
 		boolean firstLine=true;
+		long fastaIndex = 0;
 		int count = 0;
 		
 		
@@ -54,16 +61,29 @@ public class Parser {
 					if (!firstLine) {
 						count++;
 						
-						if (sequences.containsKey(object.seq)) {
-							sequences.get(object.seq).add(gson.toJson(object));
-							for (String o : sequences.get(object.seq)) {
-								System.out.println(o);
-							}
-						} else {
-							HashSet<String> set = new HashSet<String>();
-							set.add(gson.toJson(object));
-							sequences.put(object.seq, set);
+						//if object doesnt exist in cassandra --> write to cassandra protein_redundancy
+						ResultSet rs = connection.selectProt_Redundancy(object);
+						if (rs.isExhausted()) {
+							UUID prot_ID = UUIDs.timeBased();
+							connection.writeObjectToProtein_Redundancy(object, prot_ID);
+							long[] arr = new long[1];
+							arr[0] = fastaIndex;
+							fastaIndex++;
+							map.put(prot_ID, arr);
 						}
+						
+						//if object is already in cassandra --> get existing UUID and map to fastaIndex
+						else{
+							Row result = rs.one();
+							UUID prot_ID = result.getUUID(0);
+							long[] arrayOld = map.get(prot_ID);
+							long[] arrayNew = new long[arrayOld.length+1];
+							System.arraycopy(arrayOld, 0, arrayNew, 0, arrayOld.length);
+							arrayNew[arrayNew.length-1] = fastaIndex;
+							fastaIndex++;
+							map.put(result.getUUID(0), arrayNew);
+						}
+
 					
 					}
 					object = new FastaObject(temp, "");
@@ -75,8 +95,6 @@ public class Parser {
 				}
 				
 			}
-		connection.writeListToCassandra(sequences, fastaID);
-		System.out.println(sequences.size());
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -84,8 +102,12 @@ public class Parser {
 		
 		connection.close();
 	}
-
+	
+	public void parseFile() {
 		
-		
-
 	}
+	public void checkRedundandy() {
+		
+	}
+
+}
