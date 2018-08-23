@@ -24,6 +24,26 @@
 	    <version>3.5.0.1</version>
 	    <scope>test</scope>
 	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.datastax.oss/java-driver-query-builder -->
+	<dependency>
+	    <groupId>com.datastax.oss</groupId>
+	    <artifactId>java-driver-query-builder</artifactId>
+	    <version>4.0.0-beta1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.datastax.oss/java-driver-core -->
+	<dependency>
+	    <groupId>com.datastax.oss</groupId>
+	    <artifactId>java-driver-core</artifactId>
+	    <version>4.0.0-beta1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.datastax.oss/java-driver-shaded-guava -->
+	<dependency>
+	    <groupId>com.datastax.oss</groupId>
+	    <artifactId>java-driver-shaded-guava</artifactId>
+	    <version>25.1-jre</version>
+	</dependency>
+	
+		
 		
 </dependencies>
 
