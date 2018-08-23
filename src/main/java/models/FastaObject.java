@@ -16,6 +16,7 @@ public class FastaObject implements Serializable{
 	public String description;
 	public String taxonomy;
 	public String jsonString;
+	public String uniprotAccession;
 
         
     public FastaObject(){
@@ -23,18 +24,15 @@ public class FastaObject implements Serializable{
             this.refAccession=null;
     		this.description=null;
     		this.taxonomy=null;
+    		this.uniprotAccession=null;
     }
 
-	public FastaObject(String meta) {
-		
-		String[] parts1 = meta.split("[|]");
-		this.giAccession=parts1[1];
-		this.refAccession=parts1[3];
-		this.description=parts1[4];
-		String[] parts2 = meta.split("\\[");
-		String[] parts3 = parts2[1].split("\\]");
-		this.taxonomy=parts3[0];
-		
+	public String getUniprotAccession() {
+		return uniprotAccession;
+	}
+
+	public void setUniprotAccession(String uniprotAccession) {
+		this.uniprotAccession = uniprotAccession;
 	}
 
 	public String getgiAccession() {

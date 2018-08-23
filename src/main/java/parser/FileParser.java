@@ -31,6 +31,7 @@ public class FileParser implements Iterator<String>{
 	public String next() {
 		
 		try {
+			// TODO StringBuilder statt String
 			String result = "";
 			
 			if (nextLine==null) {
