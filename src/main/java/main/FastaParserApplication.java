@@ -43,6 +43,7 @@ public class FastaParserApplication implements Runnable {
 		connection.connect();
 		connection.createProteinTable();
 		connection.createProtein_RedundancyTable();
+		connection.createPeptideTable();
 		connection.createNewColumn(fastaID);
 	}
 
@@ -85,7 +86,6 @@ public class FastaParserApplication implements Runnable {
 		if (mapCountDuplicates.get(prot_ID).longValue() > 1) {
 
 			if (mapCollectDuplicateEntries.containsKey(prot_ID)) {
-				System.out.println(prot_ID);
 				mapCollectDuplicateEntries.get(prot_ID).add(gson.toJson(object));
 			} else {
 				ArrayList<String> list = new ArrayList<String>();
@@ -136,6 +136,7 @@ public class FastaParserApplication implements Runnable {
 			}
 		}
 		connection.writeMapToPeptideTable(mapCollectDuplicatePeptides, fastaID);
+		System.out.println("done with PeptideTable");
 		fp.reset();
 		while (fp.hasNext()) {
 			String entry = fp.next();

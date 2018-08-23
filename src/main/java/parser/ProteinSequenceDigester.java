@@ -11,13 +11,7 @@ import org.expasy.mzjava.proteomics.mol.digest.ProteinDigester;
 
 public class ProteinSequenceDigester {
 
-	
-	public static void main(String[] args) {
 
-		
-	}
-	
-	
 	public Set<String> digestAndFragementProtein(String protAcession, String protSequence) {
 		
         ProteinDigester digester = new ProteinDigester.Builder(Protease.TRYPSIN).build();

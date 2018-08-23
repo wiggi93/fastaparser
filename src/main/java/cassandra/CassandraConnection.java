@@ -62,7 +62,6 @@ public class CassandraConnection {
 		Statement st = new SimpleStatement(
 				"INSERT INTO polyglot_persistence.protein (prot_id, \"" + fastaID + "\") VALUES (" + prot_ID + ", ?);",
 				list);
-		System.out.println(st.toString());
 		session.execute(st);
 	}
 
@@ -86,6 +85,11 @@ public class CassandraConnection {
 		session.execute(
 				"CREATE TABLE IF NOT EXISTS polyglot_persistence.protein (prot_id UUID, prot_seq TEXT, PRIMARY KEY((prot_id)));");
 	}
+	
+	public void createPeptideTable() {
+		session.execute(
+				"CREATE TABLE IF NOT EXISTS polyglot_persistence.peptide (pep_seq TEXT, PRIMARY KEY((pep_seq)));");
+	}
 
 	public void createProtein_RedundancyTable() {
 		session.execute(
@@ -100,12 +104,9 @@ public class CassandraConnection {
 
 	public void writeMapToPeptideTable(HashMap<String, Set<UUID>> mapCollectDuplicatePeptides, UUID fastaID) {
 		for (Entry<String, Set<UUID>> entry : mapCollectDuplicatePeptides.entrySet()) {
-			System.out.println(entry.getKey());
-			System.out.println(entry.getValue());
 			Statement st = new SimpleStatement(
-					"INSERT INTO polyglot_persistence.peptide (pep_seq, \"" + fastaID + "\") VALUES (" + entry.getKey() + ", \"?\");",
+					"INSERT INTO polyglot_persistence.peptide (pep_seq, \"" + fastaID + "\") VALUES ('" + entry.getKey() + "', ?);",
 					entry.getValue());
-			System.out.println(st.toString());
 			session.execute(st);
 		}
 	}
