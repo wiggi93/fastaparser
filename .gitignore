@@ -1,3 +1,4 @@
 /target/
 /fastaparser.iml
 /.idea/
+/src/assets/uniprot-full.fasta

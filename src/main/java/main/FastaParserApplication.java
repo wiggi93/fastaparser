@@ -30,7 +30,7 @@ public class FastaParserApplication implements Runnable {
 
 	public static void main(String[] args) {
 		FastaParserApplication application = new FastaParserApplication(
-				"/Users/philip/Desktop/arbeit/WorkspaceSpeL/uniprot_homo_sapiens.fasta");
+				"../../assets/uniprot-short.fasta");
 		application.run();
 	}
 
