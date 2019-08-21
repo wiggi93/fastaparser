@@ -17,98 +17,103 @@ import com.datastax.driver.core.Statement;
 
 public class CassandraConnection {
 
-	private Cluster cluster;
+    private Cluster cluster;
 
-	private Session session;
+    private Session session;
 
-	public void connect() {
-		Builder b = Cluster.builder().addContactPoint("127.0.0.1");
-		b.withPort(9042);
-		cluster = b.build();
-		session = cluster.connect();
-	}
+    public void connect() {
+        Builder b = Cluster.builder().addContactPoint("127.0.0.1");
+        b.withPort(9042);
+        cluster = b.build();
+        session = cluster.connect();
+    }
 
-	public Session getSession() {
-		return this.session;
-	}
+    public Session getSession() {
+        return this.session;
+    }
 
-	public void close() {
-		session.close();
-		cluster.close();
-	}
+    public void close() {
+        session.close();
+        cluster.close();
+    }
 
-	public void writeObjectToProtein(String seq, UUID prot_ID) {
+    public void writeObjectToProtein(String seq, UUID prot_ID) {
 
-		StringBuilder sb = new StringBuilder("INSERT INTO ").append("polyglot_persistence.protein")
-				.append(" (prot_id, prot_seq)").append("VALUES (").append(prot_ID + ", " + "'" + seq).append("');");
+        StringBuilder sb = new StringBuilder("INSERT INTO ").append("polyglot_persistence.protein")
+                .append(" (prot_id, prot_seq)").append("VALUES (").append(prot_ID + ", " + "'" + seq).append("');");
 
-		String query = sb.toString();
-		session.execute(query);
-	}
+        String query = sb.toString();
+        session.execute(query);
+    }
 
-	public void insertObjectToProtein(UUID prot_ID, String meta, UUID fastaID) {
+    public void insertObjectToProtein(UUID prot_ID, String meta, UUID fastaID) {
 
-		List<String> list = new LinkedList<String>();
-		list.add(meta);
-		Statement st = new SimpleStatement(
-				"INSERT INTO polyglot_persistence.protein (prot_id, \"" + fastaID + "\") VALUES (" + prot_ID + ", ?);",
-				list);
-		session.execute(st);
+        List<String> list = new LinkedList<String>();
+        list.add(meta);
+        Statement st = new SimpleStatement(
+                "INSERT INTO polyglot_persistence.protein (prot_id, \"" + fastaID + "\") VALUES (" + prot_ID + ", ?);",
+                list);
+        session.execute(st);
 
-	}
+    }
 
-	public void insertListToProtein(UUID prot_ID, ArrayList<String> list, UUID fastaID) {
+    public void insertListToProtein(UUID prot_ID, ArrayList<String> list, UUID fastaID) {
 
-		Statement st = new SimpleStatement(
-				"INSERT INTO polyglot_persistence.protein (prot_id, \"" + fastaID + "\") VALUES (" + prot_ID + ", ?);",
-				list);
-		session.execute(st);
-	}
+        Statement st = new SimpleStatement(
+                "INSERT INTO polyglot_persistence.protein (prot_id, \"" + fastaID + "\") VALUES (" + prot_ID + ", ?);",
+                list);
+        session.execute(st);
+    }
 
-	public void writeObjectToProtein_Redundancy(String seq, UUID prot_ID) {
+    public void writeObjectToProtein_Redundancy(String seq, UUID prot_ID) {
 
-		StringBuilder sb = new StringBuilder("INSERT INTO ").append("polyglot_persistence.protein_redundancy")
-				.append(" (prot_seq, prot_id) ").append("VALUES (").append("'" + seq + "', " + prot_ID + " );");
+        StringBuilder sb = new StringBuilder("INSERT INTO ").append("polyglot_persistence.protein_redundancy")
+                .append(" (prot_seq, prot_id) ").append("VALUES (").append("'" + seq + "', " + prot_ID + " );");
 
-		String query = sb.toString();
-		session.execute(query);
-	}
+        String query = sb.toString();
+        session.execute(query);
+    }
 
-	public void createNewColumn(UUID fastaID) {
-		String query = "ALTER TABLE polyglot_persistence.protein ADD \"" + fastaID.toString() + "\" SET<TEXT>;";
-		session.execute(query);
-		query = "ALTER TABLE polyglot_persistence.peptide ADD \"" + fastaID.toString() + "\" SET<UUID>;";
-		session.execute(query);
-	}
+    public void createNewColumn(UUID fastaID) {
+        String query = "ALTER TABLE polyglot_persistence.protein ADD \"" + fastaID.toString() + "\" SET<TEXT>;";
+        session.execute(query);
+        query = "ALTER TABLE polyglot_persistence.peptide ADD \"" + fastaID.toString() + "\" SET<UUID>;";
+        session.execute(query);
+    }
 
-	public void createProteinTable() {
-		session.execute(
-				"CREATE TABLE IF NOT EXISTS polyglot_persistence.protein (prot_id UUID, prot_seq TEXT, PRIMARY KEY((prot_id)));");
-	}
-	
-	public void createPeptideTable() {
-		session.execute(
-				"CREATE TABLE IF NOT EXISTS polyglot_persistence.peptide (pep_seq TEXT, PRIMARY KEY((pep_seq)));");
-	}
+    public void createKeyspace(String keyspaceName) {
+        session.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspaceName + " WITH replication = " +
+                "{'class':'SimpleStrategy', 'replication_factor' : 1};");
+    }
 
-	public void createProtein_RedundancyTable() {
-		session.execute(
-				"CREATE TABLE IF NOT EXISTS polyglot_persistence.protein_redundancy (prot_id UUID, prot_seq TEXT, PRIMARY KEY(prot_seq));");
-	}
+    public void createProteinTable() {
+        session.execute(
+                "CREATE TABLE IF NOT EXISTS polyglot_persistence.protein (prot_id UUID, prot_seq TEXT, PRIMARY KEY((prot_id)));");
+    }
 
-	public ResultSet selectProt_Redundancy(String seq) {
+    public void createPeptideTable() {
+        session.execute(
+                "CREATE TABLE IF NOT EXISTS polyglot_persistence.peptide (pep_seq TEXT, PRIMARY KEY((pep_seq)));");
+    }
 
-		return session
-				.execute("SELECT prot_id FROM polyglot_persistence.protein_redundancy WHERE prot_seq= '" + seq + "' ;");
-	}
+    public void createProtein_RedundancyTable() {
+        session.execute(
+                "CREATE TABLE IF NOT EXISTS polyglot_persistence.protein_redundancy (prot_id UUID, prot_seq TEXT, PRIMARY KEY(prot_seq));");
+    }
 
-	public void writeMapToPeptideTable(HashMap<String, Set<UUID>> mapCollectDuplicatePeptides, UUID fastaID) {
-		for (Entry<String, Set<UUID>> entry : mapCollectDuplicatePeptides.entrySet()) {
-			Statement st = new SimpleStatement(
-					"INSERT INTO polyglot_persistence.peptide (pep_seq, \"" + fastaID + "\") VALUES ('" + entry.getKey() + "', ?);",
-					entry.getValue());
-			session.execute(st);
-		}
-	}
+    public ResultSet selectProt_Redundancy(String seq) {
+
+        return session
+                .execute("SELECT prot_id FROM polyglot_persistence.protein_redundancy WHERE prot_seq= '" + seq + "' ;");
+    }
+
+    public void writeMapToPeptideTable(HashMap<String, Set<UUID>> mapCollectDuplicatePeptides, UUID fastaID) {
+        for (Entry<String, Set<UUID>> entry : mapCollectDuplicatePeptides.entrySet()) {
+            Statement st = new SimpleStatement(
+                    "INSERT INTO polyglot_persistence.peptide (pep_seq, \"" + fastaID + "\") VALUES ('" + entry.getKey() + "', ?);",
+                    entry.getValue());
+            session.execute(st);
+        }
+    }
 
 }
