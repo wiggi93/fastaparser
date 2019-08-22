@@ -2,20 +2,13 @@ package models;
 
 import java.io.Serializable;
 
-
-
-
 public class FastaObject implements Serializable{
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	public String giAccession;
 	public String refAccession;
 	public String description;
 	public String taxonomy;
-	public String jsonString;
 	public String uniprotAccession;
 
         

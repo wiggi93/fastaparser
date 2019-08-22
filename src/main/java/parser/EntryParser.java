@@ -3,15 +3,24 @@ package parser;
 import models.FastaObject;
 
 public class EntryParser {
-	
-	//TODO rename
-	//TODO metagenome gedanken machen
-	
+
+	/**
+	 * extracts the peptide sequence of a protein entry in fasta file
+	 *
+	 * @param entry  	one protein entry of the fasta file
+	 * @return 			peptide sequence as string
+	 */
 	public String getSequence(String entry) {
 		String[] parts = entry.split("[$]");
 		return parts[1];
 	}
 
+	/**
+	 * creates FastaObject from an entry of the fasta file
+	 *
+	 * @param entry  	one protein entry of the fasta file
+	 * @return 			entry as FastaObject
+	 */
 	public FastaObject getFastaObject(String entry) {
 		FastaObject object = new FastaObject();
 		String[] parts1 = entry.split("[|]");

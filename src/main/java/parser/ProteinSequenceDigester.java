@@ -11,12 +11,17 @@ import org.expasy.mzjava.proteomics.mol.digest.ProteinDigester;
 
 public class ProteinSequenceDigester {
 
-
-	public Set<String> digestAndFragementProtein(String protAcession, String protSequence) {
+    /**
+     * Digests a protein sequence into peptide sequences based on the protein accession
+     * @param protAccession     protein accession
+     * @param protSequence      protein sequence
+     * @return                  set of peptide sequence strings
+     */
+	public Set<String> digestAndFragementProtein(String protAccession, String protSequence) {
 		
         ProteinDigester digester = new ProteinDigester.Builder(Protease.TRYPSIN).build();
  
-        Protein prot = new Protein(protAcession, protSequence);
+        Protein prot = new Protein(protAccession, protSequence);
  
         List<Peptide> list = digester.digest(prot);
         Set<String> resultPeptides = new HashSet<String>();

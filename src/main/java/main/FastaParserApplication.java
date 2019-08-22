@@ -18,9 +18,9 @@ public class FastaParserApplication implements Runnable {
     private ProteinSequenceDigester digester;
     private UUID fastaID;
     private Gson gson = new Gson();
-    private HashMap<String, Set<UUID>> mapCollectDuplicatePeptides = new HashMap<String, Set<UUID>>();
+    private HashMap<String, Set<UUID>> mapCollectDuplicatePeptides = new HashMap<>();
     private HashMap<UUID, Long> mapCountDuplicates = new HashMap<UUID, Long>();
-    private HashMap<UUID, ArrayList<String>> mapCollectDuplicateEntries = new HashMap<UUID, ArrayList<String>>();
+    private HashMap<UUID, ArrayList<String>> mapCollectDuplicateEntries = new HashMap<>();
     private String path;
 
     public static void main(String[] args) {
@@ -33,6 +33,9 @@ public class FastaParserApplication implements Runnable {
         this.path = path;
     }
 
+    /**
+     * Sets up Cassandra connection and creates needed keyspace and tables if not already existing
+     */
     public void setUpCassandraConnection() {
         connection = new CassandraConnection();
         connection.connect();
@@ -43,6 +46,15 @@ public class FastaParserApplication implements Runnable {
         connection.createNewColumn(fastaID);
     }
 
+    /**
+     * Checks if protein is already saved in Cassandra redundancy table.
+     * If it is the existing prot_ID is returned.
+     * If not a new one is created and saved to protein redundancy table and protein table
+     * Count of duplicates in mapCountDuplicates is increased
+     *
+     * @param seq       sequence of current entry
+     * @return prot_ID  prot_ID as it saved in Cassandra redundancy table
+     */
     public UUID checkRedundancy(String seq) {
 
         ResultSet rs = connection.selectProt_Redundancy(seq);
@@ -74,7 +86,14 @@ public class FastaParserApplication implements Runnable {
         return prot_ID;
 
     }
-
+    /**
+     * Checks the count of duplicate protein entries.
+     * Collects all duplicate proteins in mapCollectDuplicateEntries.
+     * When all protein duplicates are found --> insert to Cassandra
+     *
+     * @param seq       sequence of current entry
+     * @param object    FastaObject of current entry
+    */
     public void updateProteinTable(String seq, FastaObject object) {
 
         UUID prot_ID = connection.selectProt_Redundancy(seq).one().getUUID(0);
@@ -98,10 +117,27 @@ public class FastaParserApplication implements Runnable {
                 connection.insertListToProtein(prot_ID, mapCollectDuplicateEntries.get(prot_ID), fastaID);
             } else {
                 connection.insertObjectToProtein(prot_ID, gson.toJson(object), fastaID);
-                ;
             }
         }
 
+    }
+
+    /**
+     * updates mapCollectDuplicatePeptides by adding prot_ID of protein it belongs to to the map
+     *
+     * @param peptideSequences  peptide sequences for current protein
+     * @param prot_ID           UUID for current protein
+     */
+    public void collectDuplicatePeptidesInMap(Set<String> peptideSequences, UUID prot_ID) {
+        for (String s : peptideSequences) {
+            if (mapCollectDuplicatePeptides.containsKey(s)) {
+                mapCollectDuplicatePeptides.get(s).add(prot_ID);
+            } else {
+                HashSet<UUID> temp = new HashSet<UUID>();
+                temp.add(prot_ID);
+                mapCollectDuplicatePeptides.put(s, temp);
+            }
+        }
     }
 
     public void run() {
@@ -111,29 +147,26 @@ public class FastaParserApplication implements Runnable {
         digester = new ProteinSequenceDigester();
 
         fastaID = UUIDs.timeBased();
-        UUID prot_ID = null;
+        UUID prot_ID;
         setUpCassandraConnection();
 
-        Set<String> peptideSequences = new HashSet<String>();
+        Set<String> peptideSequences = new HashSet<>();
 
         while (fp.hasNext()) {
             peptideSequences.clear();
             String entry = fp.next();
+
             prot_ID = checkRedundancy(ep.getSequence(entry));
+
             peptideSequences = digester.digestAndFragementProtein("", ep.getSequence(entry));
-            for (String s : peptideSequences) {
-                if (mapCollectDuplicatePeptides.containsKey(s)) {
-                    mapCollectDuplicatePeptides.get(s).add(prot_ID);
-                } else {
-                    HashSet<UUID> temp = new HashSet<UUID>();
-                    temp.add(prot_ID);
-                    mapCollectDuplicatePeptides.put(s, temp);
-                }
-            }
+
+            collectDuplicatePeptidesInMap(peptideSequences, prot_ID);
         }
+
         connection.writeMapToPeptideTable(mapCollectDuplicatePeptides, fastaID);
-        System.out.println("done with PeptideTable");
+
         fp.reset();
+
         while (fp.hasNext()) {
             String entry = fp.next();
             updateProteinTable(ep.getSequence(entry), ep.getFastaObject(entry));
