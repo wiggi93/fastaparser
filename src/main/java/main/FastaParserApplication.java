@@ -133,7 +133,7 @@ public class FastaParserApplication implements Runnable {
             if (mapCollectDuplicatePeptides.containsKey(s)) {
                 mapCollectDuplicatePeptides.get(s).add(prot_ID);
             } else {
-                HashSet<UUID> temp = new HashSet<UUID>();
+                HashSet<UUID> temp = new HashSet<>();
                 temp.add(prot_ID);
                 mapCollectDuplicatePeptides.put(s, temp);
             }
